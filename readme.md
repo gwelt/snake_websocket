@@ -20,5 +20,5 @@ npm start
 Open [http://localhost:3000](http://localhost:3000) and/or connect to your local ip on port 3000 from other devices.
 
 ### Redirect port 3000 to port 80
-Start ./port3000redirect.sh to add redirect-rules to your [IPTABLES](https://help.ubuntu.com/community/IptablesHowTo). Your server will now be listening on port 80.
+Start [./port3000redirect.sh](https://github.com/gwelt/snake_websocket/blob/master/port3000redirect.sh) to add redirect-rules to your [IPTABLES](https://help.ubuntu.com/community/IptablesHowTo). Your server will now be listening on port 80.
 Open [http://localhost](http://localhost).
