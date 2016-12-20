@@ -6,10 +6,11 @@ Let multiple players battle with their snakes on a web-page.
 curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
-### Use git to clone this project and start the server
+### Use git to clone this project, install node.js-dependencies and start the server
 ```
 git clone https://github.com/gwelt/snake_websocket
 cd snake_websocket
+npm install
 npm start
 ```
 ### Connect
