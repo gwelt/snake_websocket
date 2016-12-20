@@ -1,5 +1,5 @@
 # Snake with Node.js and websocket
-Let multiple players battle with their snakes on a web-page.
+Let multiple players battle their snakes on a web-page.
 
 ### Install [Node.js version 7.x](https://nodejs.org/en/download/package-manager/)
 ```
