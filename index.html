@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <title>SNAKE / WebSocket</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font:23px Helvetica, Arial; }
+    </style>
+  </head>
+  <body>
+    
+    <div id="grid">PRESS [P to play] OR [ESC to exit]<br></div>
+
+    <script>
+      var ws=false; //new WebSocket(HOST);
+      function ws_open() {
+        if (ws==false) {          
+          ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
+          ws.onopen = function () {}; //{ws.send('HELLO');};
+          ws.onmessage = function (event) {
+            document.getElementById('grid').innerHTML+=' '+event.data;
+          };
+        }
+      }
+      ws_open(); // AUTO-OPEN
+      function send(msg) {if (ws) {ws.send(msg)}}
+      document.onkeydown = function(event) {
+        if (!(ws)&&(event.keyCode==80)) {ws_open();} // P (PLAY)
+        var keyset=[37,38,39,40,27];
+        if ((ws)&&(keyset.indexOf(event.keyCode)>=0)) {
+          if      (event.keyCode==37) {send('L')} // LEFT
+          else if (event.keyCode==38) {send('U')} // UP
+          else if (event.keyCode==39) {send('R')} // RIGHT
+          else if (event.keyCode==40) {send('D')} // DOWN
+          else if (event.keyCode==27) {send('Q');ws=false;} // ESC (EXIT)
+          event.cancelBubble = true;
+          event.returnValue = false;
+        }
+        return event.returnValue;
+      }
+
+    </script>
+    
+  </body>
+</html>
