@@ -8,7 +8,7 @@ const INDEX = path.join(__dirname, 'index.html');
 const server = express()
   .use((req, res) => res.sendFile(INDEX) )
   .listen(PORT, function() {
-    console.log(`\x1bcSNAKE SERVER LISTENING ON PORT ${ PORT }`);
+    if (debug) console.log(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);
   });
 const wss = new SocketServer({ server });
 var players={};
@@ -34,6 +34,12 @@ wss.on('connection', (ws) => {
     wss_send_to_all_players(player+msg);
     if (msg=='Q') {ws.send('BYE-BYE!'); ws.close();} 
   });
+});
+
+process.on ('SIGINT', function () {
+  wss_send_to_all_players('SERVER IS GOING DOWN!');
+  if (debug) console.log('\r\n\x1b[44m SERVER DOWN \x1b[0m');
+  process.exit(0);
 });
 
 /*
