@@ -1,4 +1,5 @@
 'use strict';
+const tty=true;
 const debug=true;
 const express = require('express');
 const SocketServer = require('ws').Server;
@@ -8,7 +9,8 @@ const INDEX = path.join(__dirname, 'index.html');
 const server = express()
   .use((req, res) => res.sendFile(INDEX) )
   .listen(PORT, function() {
-    if (debug) console.log(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);
+    if (debug&&tty) console.log(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`)
+    else if (tty) console.log(`\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);
   });
 const wss = new SocketServer({ server });
 var players={};
@@ -36,9 +38,18 @@ wss.on('connection', (ws) => {
   });
 });
 
+
+var stdin = process.openStdin();
+stdin.addListener("data", function(d) {
+  if (tty) {
+    console.log("COMMAND: \x1b[44m " + d.toString().trim() + " \x1b[0m");
+    if (d.toString().trim()=="exit") {wss_send_to_all_players('SERVER IS GOING DOWN!'); setTimeout(function () {console.log('\x1b[44m SNAKE SERVER SAID BYE-BYE TO ALL PLAYERS AND IS NOW DOWN \x1b[0m'); process.exit(0)}, 1000);}
+    else {wss_send_to_all_players(d.toString().trim());}
+  }
+});
+
 process.on ('SIGINT', function () {
-  wss_send_to_all_players('SERVER IS GOING DOWN!');
-  if (debug) console.log('\r\n\x1b[44m SERVER DOWN \x1b[0m');
+  if (tty) console.log('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m');
   process.exit(0);
 });
 
