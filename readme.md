@@ -11,7 +11,7 @@ sudo apt-get install -y nodejs
 git clone https://github.com/gwelt/snake_websocket
 cd snake_websocket
 ```
-### install node.js-dependencies and start the server
+### Install Node.js-dependencies and start the server
 ```
 npm install
 npm start
