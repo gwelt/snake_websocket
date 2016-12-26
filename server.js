@@ -1,4 +1,5 @@
 'use strict';
+const delay=1000;
 const tty=true;
 const debug=true;
 const express = require('express');
@@ -13,12 +14,20 @@ const server = express()
     else if (tty) console.log(`\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);
   });
 const wss = new SocketServer({ server });
-var players={};
 
+///--- GLOBAL ---///
+var snakes=[];
+var snake_count=0;
 
+///--- MAIN ---///
+setInterval(() => {
+  snakes.forEach(function (s) {s.move()});
+  wss.clients.forEach((client) => {client.send(JSON.stringify(snakes))})
+}, delay);
+
+///--- SNAKE-CLASS ---///
 function Snake() {
-  var list = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  this.id=list.charAt(Math.floor(Math.random() * list.length));
+  this.id=++snake_count;
   this.reset();
 }
 Snake.prototype.reset = function () {
@@ -29,37 +38,50 @@ Snake.prototype.reset = function () {
 Snake.prototype.set_heading = function (heading) {
   this.heading=heading;
 }
+Snake.prototype.getX = function () {return this.elements[this.elements.length-2]}
+Snake.prototype.getY = function () {return this.elements[this.elements.length-1]}
 Snake.prototype.move = function () {
-  var x=0;
-  var y=0;
-  if (this.elements.length>1) {
-    x=this.elements[this.elements.length-2];
-    y=this.elements[this.elements.length-1];
-  }
-  if (this.heading=='L') {x=x-1}
-  else if (this.heading=='U') {y=y+1}
-  else if (this.heading=='R') {x=x+1}
-  else if (this.heading=='D') {y=y-1}
-  this.elements.push(x,y);//this.elements.push(y);
-  while (this.elements.length>this.maxlength*2) {this.elements.splice(0,1)}
-  return this.elements.length/2+'['+x+':'+y+']';
+  var x=this.getX();
+  var y=this.getY();
+  if (this.heading=='L') {--x}
+  else if (this.heading=='U') {++y}
+  else if (this.heading=='R') {++x}
+  else if (this.heading=='D') {--y}
+  this.elements.push(x,y);
+  while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
 };
 module.exports=Snake;
 
-
+///--- CONNECTION-HANDLER ---///
 wss.on('connection', (ws) => {
-  var s = new Snake();
-  log('WELCOME '+s.id,42); ws.send('WELCOME PLAYER '+s.id);
-  ws.on('close', () => log('BYE-BYE '+s.id,41));
+  var s=new Snake();
+  snakes.push(s);
+  log('WELCOME '+s.id,42);
+  ws.send('WELCOME PLAYER '+s.id);
+  
   ws.on('message', (msg) => {
-    //if (msg.startsWith('HELLO')) {log('HELLO PLAYER '+player,42); msg='HELLO PLAYER '+player;}
-    log(s.id+msg,0);
-    if (msg=='Q') {ws.send('BYE-BYE, '+s.id+'!'); ws.close();} 
-    else {s.set_heading(msg); log(s.move())}
-    wss_send_to_all_players(s.id+''+msg+''+s.elements.length/2+'['+s.elements[s.elements.length-2]+':'+s.elements[s.elements.length-1]+']');
+    if (msg=='Q') {
+      log('BYE-BYE '+s.id,41);
+      ws.send('BYE-BYE '+s.id+'!');
+      snakes.remove(s);
+      s=undefined;
+    }
+    else {
+      s.set_heading(msg); 
+      log(s.id+msg);
+    }
   });
+  ws.on('close', () => {ws.close()});
 });
 
+
+///--- HELPERS ---///
+Array.prototype.remove = function(e) {
+  var t, _ref;
+  if ((t = this.indexOf(e)) > -1) {
+    return ([].splice.apply(this, [t, t - t + 1].concat(_ref = [])), _ref);
+  }
+};
 
 function log(text,col) {
   if (debug) {if (col>0) {process.stdout.write('\x1b['+col+'m '+text+' \x1b[0m ')} else {process.stdout.write(text+' ');}} return;
@@ -81,10 +103,3 @@ process.on ('SIGINT', function () {
   process.exit(0);
 });
 
-/*
-setInterval(() => {
-  wss.clients.forEach((client) => {
-    client.send(new Date().toTimeString());
-  });
-}, 1000);
-*/
