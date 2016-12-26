@@ -61,17 +61,15 @@ wss.on('connection', (ws) => {
   
   ws.on('message', (msg) => {
     if (msg=='Q') {
-      log('BYE-BYE '+s.id,41);
       ws.send('BYE-BYE '+s.id+'!');
-      snakes.remove(s);
-      s=undefined;
+      ws.close();
     }
     else {
       s.set_heading(msg); 
       log(s.id+msg);
     }
   });
-  ws.on('close', () => {ws.close()});
+  ws.on('close', () => {log('BYE-BYE '+s.id,41);snakes.remove(s);s=undefined;});
 });
 
 
