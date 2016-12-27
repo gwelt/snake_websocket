@@ -26,29 +26,32 @@ setInterval(() => {
 ///--- SNAKE-CLASS ---///
 function Snake() {
   this.id=++snake_count;
-  this.elements=[]; // list of X,Y-tupels
+  this.reset();
+}
+Snake.prototype.reset = function () {
+  this.elements=[]; // list of [X,Y]-tupels
   this.heading=null;
   this.maxlength=0;
+}
+Snake.prototype.launch = function () {
+  this.elements=[[3,5]];
+  this.maxlength=3;
 }
 Snake.prototype.set_heading = function (h) {
   this.heading=h[0];
 }
-Snake.prototype.launch = function () {
-  this.elements=[3,5];
-  this.maxlength=3;
-}
 Snake.prototype.move = function () {
-  if (this.elements.length>1) {
-    var x=this.elements[this.elements.length-2];
-	var y=this.elements[this.elements.length-1];
+  if (this.elements.length>0) {
+    var pos=this.elements[this.elements.length-1]; // X=pos[0],Y=pos[1]
+    var x=pos[0], y=pos[1];
 	switch (this.heading) {
 	  case 'L': --x; break;
 	  case 'U': ++y; break;
 	  case 'R': ++x; break;
 	  case 'D': --y; break;
 	}
-    this.elements.push(x,y);
-    while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
+    this.elements.push([x,y]);
+    while (this.elements.length>this.maxlength) {this.elements.splice(0,1)}
   }
   else if (this.heading) {this.launch()}
 };
@@ -63,11 +66,13 @@ wss.on('connection', (ws) => {
   ws.on('message', (msg) => {
     if (msg=='Q') {
       ws.send('BYE-BYE '+s.id+'!');
-      ws.close();
+      log(s.id+msg[0]);
+      s.reset();
+      //ws.close();
     }
     else {
-      s.set_heading(msg); 
-      log(s.id+msg);
+      s.set_heading(msg[0]);
+      log(s.id+msg[0]);
     }
   });
   ws.on('close', () => {snakes.remove(s);log('BYE-BYE '+s.id,41);s=undefined;});
