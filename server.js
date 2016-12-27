@@ -26,31 +26,31 @@ setInterval(() => {
 ///--- SNAKE-CLASS ---///
 function Snake() {
   this.id=++snake_count;
-  this.elements=[];
-  this.heading='';
+  this.elements=[]; // list of X,Y-tupels
+  this.heading=null;
   this.maxlength=0;
+}
+Snake.prototype.set_heading = function (h) {
+  this.heading=h[0];
 }
 Snake.prototype.launch = function () {
   this.elements=[3,5];
   this.maxlength=3;
 }
-Snake.prototype.set_heading = function (h) {
-  this.heading=h;
-}
 Snake.prototype.move = function () {
   if (this.elements.length>1) {
-	  var x=this.elements[this.elements.length-2];
-	  var y=this.elements[this.elements.length-1];
-	  switch (this.heading) {
-	  	case 'L': --x; break;
-	  	case 'U': ++y; break;
-	  	case 'R': ++x; break;
-	  	case 'D': --y; break;
-	  }
-	  this.elements.push(x,y);
-	  while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
+    var x=this.elements[this.elements.length-2];
+	var y=this.elements[this.elements.length-1];
+	switch (this.heading) {
+	  case 'L': --x; break;
+	  case 'U': ++y; break;
+	  case 'R': ++x; break;
+	  case 'D': --y; break;
+	}
+    this.elements.push(x,y);
+    while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
   }
-  else if (this.heading!='') {this.launch()}
+  else if (this.heading) {this.launch()}
 };
 module.exports=Snake;
 
@@ -60,7 +60,6 @@ wss.on('connection', (ws) => {
   snakes.push(s);
   log('WELCOME '+s.id,42);
   ws.send('WELCOME PLAYER '+s.id);
-  
   ws.on('message', (msg) => {
     if (msg=='Q') {
       ws.send('BYE-BYE '+s.id+'!');
