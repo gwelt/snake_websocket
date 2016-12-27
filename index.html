@@ -23,8 +23,9 @@
           };
         }
       }
-      ws_open(); // AUTO-OPEN
-      function send(msg) {if (ws) {ws.send(msg)}}
+      //ws_open(); // AUTO-OPEN
+      var direction="";
+      function send(msg) {if ((msg!=direction) && (ws)) {direction=msg; ws.send(msg)}}
       document.onkeydown = function(event) {
         if (!(ws)&&(event.keyCode==80)) {ws_open();} // P (PLAY)
         var keyset=[37,38,39,40,27];
