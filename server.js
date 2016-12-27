@@ -15,11 +15,9 @@ const server = express()
   });
 const wss = new SocketServer({ server });
 
-///--- GLOBAL ---///
+///--- MAIN ---///
 var snakes=[];
 var snake_count=0;
-
-///--- MAIN ---///
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
   wss.clients.forEach((client) => {client.send(JSON.stringify(snakes))})
@@ -28,27 +26,31 @@ setInterval(() => {
 ///--- SNAKE-CLASS ---///
 function Snake() {
   this.id=++snake_count;
-  this.reset();
+  this.elements=[];
+  this.heading='';
+  this.maxlength=0;
 }
-Snake.prototype.reset = function () {
+Snake.prototype.launch = function () {
   this.elements=[3,5];
-  this.heading='R';
   this.maxlength=3;
 }
-Snake.prototype.set_heading = function (heading) {
-  this.heading=heading;
+Snake.prototype.set_heading = function (h) {
+  this.heading=h;
 }
-Snake.prototype.getX = function () {return this.elements[this.elements.length-2]}
-Snake.prototype.getY = function () {return this.elements[this.elements.length-1]}
 Snake.prototype.move = function () {
-  var x=this.getX();
-  var y=this.getY();
-  if (this.heading=='L') {--x}
-  else if (this.heading=='U') {++y}
-  else if (this.heading=='R') {++x}
-  else if (this.heading=='D') {--y}
-  this.elements.push(x,y);
-  while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
+  if (this.elements.length>1) {
+	  var x=this.elements[this.elements.length-2];
+	  var y=this.elements[this.elements.length-1];
+	  switch (this.heading) {
+	  	case 'L': --x; break;
+	  	case 'U': ++y; break;
+	  	case 'R': ++x; break;
+	  	case 'D': --y; break;
+	  }
+	  this.elements.push(x,y);
+	  while (this.elements.length>this.maxlength*2) {this.elements.splice(0,2)}
+  }
+  else if (this.heading!='') {this.launch()}
 };
 module.exports=Snake;
 
@@ -69,7 +71,7 @@ wss.on('connection', (ws) => {
       log(s.id+msg);
     }
   });
-  ws.on('close', () => {log('BYE-BYE '+s.id,41);snakes.remove(s);s=undefined;});
+  ws.on('close', () => {snakes.remove(s);log('BYE-BYE '+s.id,41);s=undefined;});
 });
 
 
@@ -85,8 +87,8 @@ function log(text,col) {
   if (debug) {if (col>0) {process.stdout.write('\x1b['+col+'m '+text+' \x1b[0m ')} else {process.stdout.write(text+' ');}} return;
 }
 
+/*
 function wss_send_to_all_players(msg) {wss.clients.forEach((client) => {client.send(msg)})}
-
 var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
   if (tty) {
@@ -95,6 +97,7 @@ stdin.addListener("data", function(d) {
     else {wss_send_to_all_players(d.toString().trim());}
   }
 });
+*/
 
 process.on ('SIGINT', function () {
   if (tty) console.log('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m');

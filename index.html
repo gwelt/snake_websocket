@@ -9,7 +9,7 @@
   </head>
   <body>
     
-    <div id="grid">PRESS [P to play] OR [ESC to exit]<br></div>
+    <div id="grid">PRESS [P to play] OR [ESC to stop]<br></div>
 
     <script>
       var ws=false; //new WebSocket(HOST);
@@ -18,16 +18,15 @@
           ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
           ws.onopen = function () {}; //{ws.send('HELLO');};
           ws.onmessage = function (event) {
-            //document.getElementById('grid').innerHTML+=' '+event.data;
             document.getElementById('grid').innerHTML=event.data;
           };
         }
       }
-      //ws_open(); // AUTO-OPEN
-      var direction="";
+      ws_open(); // AUTO-OPEN
+      var direction;
       function send(msg) {if ((msg!=direction) && (ws)) {direction=msg; ws.send(msg)}}
       document.onkeydown = function(event) {
-        if (!(ws)&&(event.keyCode==80)) {ws_open();} // P (PLAY)
+        if (!(ws)&&(event.keyCode==80)) {ws_open();direction=""} // P (PLAY)
         var keyset=[37,38,39,40,27];
         if ((ws)&&(keyset.indexOf(event.keyCode)>=0)) {
           if      (event.keyCode==37) {send('L')} // LEFT
