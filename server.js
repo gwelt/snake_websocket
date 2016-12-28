@@ -1,6 +1,5 @@
 'use strict';
-const delay=1000;
-const tty=true;
+const delay=750;
 const debug=true;
 const express = require('express');
 const SocketServer = require('ws').Server;
@@ -9,19 +8,47 @@ const PORT = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
 const server = express()
   .use((req, res) => res.sendFile(INDEX) )
-  .listen(PORT, function() {
-    if (debug&&tty) console.log(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`)
-    else if (tty) console.log(`\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);
-  });
+  .listen(PORT, function() {if (debug) process.stdout.write(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);});
 const wss = new SocketServer({ server });
 
 ///--- MAIN ---///
 var snakes=[];
 var snake_count=0;
+var board_dimension=[20,5];
 setInterval(() => {
-  snakes.forEach(function (s) {s.move()});
+  board_reset();
+  snakes.forEach(function (s) {
+    s.move();
+    if (debug) {board_put_snake(s)} // DEBUG
+  });
+  if (debug) {board_print()} // DEBUG
+  detect_collisions(snakes);
   wss.clients.forEach((client) => {client.send(JSON.stringify(snakes))})
 }, delay);
+
+///--- COLLISION DETECTION ---///
+function detect_collisions (snakes) {
+  var all_heads=[], all_elements=[];
+  snakes.forEach(function (s) {
+    if (s.elements.length) {all_heads.push(s.elements[s.elements.length-1])};
+    all_elements=all_elements.concat(s.elements);
+  });
+  all_heads.forEach(function (head) {
+    var x=head[0], y=head[1], c=0;
+    all_elements.forEach(function (e) {
+      if ((e[0]==x)&&(e[1]==y)) {
+        if(c>0) {
+          snakes.forEach(function (s) {
+            if (s.elements.indexOf(head)>0) {log('COLLISION @'+head+' '+s.id+' DIES!',41);s.reset();}
+          });
+        }
+        c++; 
+      }
+    })
+  });
+  log('\n'+all_heads.length+' heads: ['+all_heads+']');
+  log('\n'+all_elements.length+' elements: ['+all_elements+']');
+}
 
 ///--- SNAKE-CLASS ---///
 function Snake() {
@@ -32,9 +59,10 @@ Snake.prototype.reset = function () {
   this.elements=[]; // list of [X,Y]-tupels
   this.heading=null;
   this.maxlength=0;
+  this.dim=board_dimension; //[25,10];
 }
 Snake.prototype.launch = function () {
-  this.elements=[[3,5]];
+  this.elements=[[0,0]];
   this.maxlength=3;
 }
 Snake.prototype.set_heading = function (h) {
@@ -44,12 +72,12 @@ Snake.prototype.move = function () {
   if (this.elements.length>0) {
     var pos=this.elements[this.elements.length-1]; // X=pos[0],Y=pos[1]
     var x=pos[0], y=pos[1];
-	switch (this.heading) {
-	  case 'L': --x; break;
-	  case 'U': ++y; break;
-	  case 'R': ++x; break;
-	  case 'D': --y; break;
-	}
+	  switch (this.heading) {
+  	  case 'L': --x; if (x<0) {x=this.dim[0]-1}; break;
+	    case 'U': ++y; if (y>this.dim[1]-1) {y=0}; break;
+  	  case 'R': ++x; if (x>this.dim[0]-1) {x=0}; break;
+	    case 'D': --y; if (y<0) {y=this.dim[1]-1}; break;
+	  }
     this.elements.push([x,y]);
     while (this.elements.length>this.maxlength) {this.elements.splice(0,1)}
   }
@@ -78,7 +106,6 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {snakes.remove(s);log('BYE-BYE '+s.id,41);s=undefined;});
 });
 
-
 ///--- HELPERS ---///
 Array.prototype.remove = function(e) {
   var t, _ref;
@@ -87,24 +114,19 @@ Array.prototype.remove = function(e) {
   }
 };
 
+process.on ('SIGINT', function () {
+  if (debug) process.stdout.write('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m');
+  process.exit(0);
+});
+
+///--- DEBUG-HELPERS ---///
 function log(text,col) {
   if (debug) {if (col>0) {process.stdout.write('\x1b['+col+'m '+text+' \x1b[0m ')} else {process.stdout.write(text+' ');}} return;
 }
 
-/*
-function wss_send_to_all_players(msg) {wss.clients.forEach((client) => {client.send(msg)})}
-var stdin = process.openStdin();
-stdin.addListener("data", function(d) {
-  if (tty) {
-    console.log("COMMAND: \x1b[44m " + d.toString().trim() + " \x1b[0m");
-    if (d.toString().trim()=="exit") {wss_send_to_all_players('SERVER IS GOING DOWN!'); setTimeout(function () {console.log('\x1b[44m SNAKE SERVER SAID BYE-BYE TO ALL PLAYERS AND IS NOW DOWN \x1b[0m'); process.exit(0)}, 1000);}
-    else {wss_send_to_all_players(d.toString().trim());}
-  }
-});
-*/
+var board=[], board_of_heads=[];
+function board_reset() {for(var x=0;x<board_dimension[0];x++){board[x]=[];board_of_heads[x]=[];for(var y=0;y<board_dimension[1];y++){board[x][y]='';board_of_heads[x][y]=''}}}
+function board_put_snake(s) {for(var i=0;i<s.elements.length;i++) {board[s.elements[i][0]][s.elements[i][1]]=s.id;}}
+function board_print() {if (debug) {process.stdout.write(`\x1bc\x1b[44m DEBUG-BOARD \x1b[0m`); for(var y=board_dimension[1]-1;y>=0;y--) {var line=''; for(var x=0;x<board_dimension[0];x++) {if (board[x][y]=='') {board[x][y]='.'} var t=board[x][y].toString().slice(0,1); line=line+t;} log('\n'+line);} log('\n');}}
 
-process.on ('SIGINT', function () {
-  if (tty) console.log('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m');
-  process.exit(0);
-});
 
