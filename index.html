@@ -9,24 +9,40 @@
   </head>
   <body>
     
-    <div id="grid">PRESS [P to play] OR [ESC to stop]<br></div>
+    <div id="grid">SNAKE STARTING...<br></div>
 
     <script>
       var ws=false; //new WebSocket(HOST);
       ws_open(); // AUTO-OPEN
+      var snakeID=0;
       var direction;
+
       function ws_open() {
         if (ws==false) {          
           ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
           ws.onopen = function () {};
-          ws.onmessage = function (event) {
-            document.getElementById('grid').innerHTML=event.data;
-            // receive ID
-            // receive DIED? ... or get status from event.data:id.elements.length > direction=""
-            // analyse event.data > show board
+          ws.onmessage = function (message) {
+            if (message.data.startsWith(':WELCOME PLAYER ')) {
+              snakeID=message.data.substr(16);
+            }
+            else {
+              var out="<a href="+location.origin+">"+location.origin+"</a><br>YOU ARE SNAKE #"+snakeID+"<br>";
+              var Snakes=JSON.parse(message.data);
+              Snakes.forEach(function (s) {
+                if (s.id==snakeID) {
+                  if (!s.elements.length) {direction=""}
+                  out+="YOUR SNAKE (#"+s.id+"): ";
+                } 
+                else {out+="SNAKE #"+s.id+": ";}
+                out+=s.elements;
+                out+="<br>";
+              });
+              document.getElementById('grid').innerHTML=out;
+            }
           };
         }
       }
+
       function send(msg) {if ((msg!=direction) && (ws)) {direction=msg; ws.send(msg)}}
       document.onkeydown = function(event) {
         //if (!(ws)&&(event.keyCode==80)) {ws_open();direction=""} // P (PLAY)
