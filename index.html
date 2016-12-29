@@ -4,55 +4,74 @@
     <title>SNAKE / WebSocket</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font:23px Helvetica, Arial; }
+      body { font:16px Helvetica, Arial; }
+      td {width:10px;height:10px;padding:1px;background-color:#c0c0c0;}
     </style>
   </head>
   <body>
     
-    <div id="grid">SNAKE STARTING...<br></div>
+    <div id="grid"></div>
+    <div id="status">WAITING FOR WEBSOCKET TO CONNECT...<br></div>
 
     <script>
-      var ws=false; //new WebSocket(HOST);
-      ws_open(); // AUTO-OPEN
-      var snakeID=0;
+      var ws=false;
+      ws_open();
+      var snakeID="[you do not have a snake yet]";
       var direction;
 
-      function ws_open() {
-        if (ws==false) {          
-          ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
-          ws.onopen = function () {};
-          ws.onmessage = function (message) {
-            if (message.data.startsWith(':WELCOME PLAYER ')) {
-              snakeID=message.data.substr(16);
-            }
-            else {
-              var out="<a href="+location.origin+">"+location.origin+"</a><br>YOU ARE SNAKE #"+snakeID+"<br>";
-              var Snakes=JSON.parse(message.data);
-              Snakes.forEach(function (s) {
-                if (s.id==snakeID) {
-                  if (!s.elements.length) {direction=""}
-                  out+="YOUR SNAKE (#"+s.id+"): ";
-                } 
-                else {out+="SNAKE #"+s.id+": ";}
-                out+=s.elements;
-                out+="<br>";
-              });
-              document.getElementById('grid').innerHTML=out;
-            }
-          };
+      function init_grid (dimX,dimY) {
+        var out="<table>";
+        for (var y=dimY-1;y>=0;y--) {
+          out+="<tr>";
+          for (var x=0;x<dimX;x++) {
+            out+="<td id=X"+x+"Y"+y+"></td>";
+          }
+          out+="</tr>";
         }
+        out+="</table>";
+        document.getElementById('grid').innerHTML=out;
       }
 
-      function send(msg) {if ((msg!=direction) && (ws)) {direction=msg; ws.send(msg)}}
+      function get_color (id) {
+        if (id==snakeID) {return '#ff0000'} else {return '#550000'}
+      }
+
+      function ws_open() {
+        ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
+        ws.onopen = function () {};
+        ws.onmessage = function (message) {
+          if (message.data.startsWith(':WELCOME PLAYER ')) {snakeID=message.data.substr(16)}
+          else {
+            var out="<a href="+location.origin+">"+location.origin+"</a><br>YOU ARE SNAKE #"+snakeID+"<br>";
+            document.getElementById('grid').innerHTML="";
+            var Snakes=JSON.parse(message.data);
+            Snakes.forEach(function (s) {
+              if (document.getElementById('grid').innerHTML=="") {init_grid(s.dim[0],s.dim[1])}
+              s.elements.forEach(function(e) {
+                document.getElementById('X'+e[0]+'Y'+e[1]).style.background=get_color(s.id);
+              });
+              if (s.id==snakeID) {
+                if (!s.elements.length) {direction=""}
+                out+="YOUR SNAKE (#"+s.id+"): ";
+              } 
+              else {out+="SNAKE #"+s.id+": ";}
+              out+=s.elements;
+              out+="<br>";
+            });
+            document.getElementById('status').innerHTML=out;
+          }
+        };
+      }
+
+      function send(msg) {if ((msg!=direction)&&(ws)) {direction=msg; ws.send(msg)}}
       document.onkeydown = function(event) {
-        //if (!(ws)&&(event.keyCode==80)) {ws_open();direction=""} // P (PLAY)
         var keyset=[37,38,39,40,27];
         if ((ws)&&(keyset.indexOf(event.keyCode)>=0)) {
           if      (event.keyCode==37) {send('L')} // LEFT
           else if (event.keyCode==38) {send('U')} // UP
           else if (event.keyCode==39) {send('R')} // RIGHT
           else if (event.keyCode==40) {send('D')} // DOWN
-          else if (event.keyCode==27) {send('Q')} // ESC (EXIT) //ws=false;
+          else if (event.keyCode==27) {send('Q')} // ESC (EXIT)
           event.cancelBubble = true;
           event.returnValue = false;
         }

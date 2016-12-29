@@ -32,7 +32,7 @@ function Snake() {
   this.reset();
 }
 Snake.prototype.reset = function () {
-  this.elements=[]; // list of [X,Y]-tupels
+  this.elements=[];
   this.heading=null;
   this.maxlength=0;
   this.dim=board_dimension;
@@ -46,7 +46,7 @@ Snake.prototype.set_heading = function (h) {
 }
 Snake.prototype.move = function () {
   if (this.elements.length>0) {
-    var pos=this.elements[this.elements.length-1]; // X=pos[0],Y=pos[1]
+    var pos=this.elements[this.elements.length-1];
     var x=pos[0], y=pos[1];
 	  switch (this.heading) {
   	  case 'L': --x; if (x<0) {x=this.dim[0]-1}; break;
