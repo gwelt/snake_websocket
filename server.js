@@ -12,6 +12,7 @@ const wss = new SocketServer({ server });
 
 ///--- MAIN ---///
 var snakes=[];
+var snakesID=0;
 const board_dimension=[20,5];
 const delay=750;
 setInterval(() => {
@@ -27,7 +28,7 @@ setInterval(() => {
 
 ///--- SNAKE-CLASS ---///
 function Snake() {
-  this.id=snakes.length+1;
+  this.id=++snakesID;
   this.reset();
 }
 Snake.prototype.reset = function () {
