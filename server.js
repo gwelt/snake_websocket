@@ -17,7 +17,7 @@ function broadcast(text) {wss.clients.forEach((ws) => {ws.send(":"+text)})}
 var snakes=[];
 var snakesID=0;
 const board_dimension=[40,20];
-const delay=500;
+const delay=300;
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
   detect_collisions(snakes);
