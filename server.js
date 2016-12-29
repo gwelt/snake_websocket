@@ -1,5 +1,5 @@
 'use strict';
-const debug=true;
+const debug=false;
 const express = require('express');
 const SocketServer = require('ws').Server;
 const path = require('path');
@@ -13,8 +13,8 @@ const wss = new SocketServer({ server });
 ///--- MAIN ---///
 var snakes=[];
 var snakesID=0;
-const board_dimension=[20,5];
-const delay=750;
+const board_dimension=[40,20];
+const delay=500;
 setInterval(() => {
   if (debug) {board_reset()} // DEBUG
   snakes.forEach(function (s) {
@@ -23,7 +23,8 @@ setInterval(() => {
   });
   if (debug) {board_print()} // DEBUG
   detect_collisions(snakes);
-  wss.clients.forEach((ws) => {ws.send(JSON.stringify(snakes))})
+  var snakes_stringified=JSON.stringify(snakes);
+  wss.clients.forEach((ws) => {ws.send(snakes_stringified)})
 }, delay);
 
 ///--- SNAKE-CLASS ---///
@@ -48,12 +49,12 @@ Snake.prototype.move = function () {
   if (this.elements.length>0) {
     var pos=this.elements[this.elements.length-1];
     var x=pos[0], y=pos[1];
-	  switch (this.heading) {
-  	  case 'L': --x; if (x<0) {x=this.dim[0]-1}; break;
-	  case 'U': ++y; if (y>this.dim[1]-1) {y=0}; break;
-  	  case 'R': ++x; if (x>this.dim[0]-1) {x=0}; break;
-	  case 'D': --y; if (y<0) {y=this.dim[1]-1}; break;
-	}
+    switch (this.heading) {
+      case 'L': --x; if (x<0) {x=this.dim[0]-1}; break;
+      case 'U': ++y; if (y>this.dim[1]-1) {y=0}; break;
+      case 'R': ++x; if (x>this.dim[0]-1) {x=0}; break;
+      case 'D': --y; if (y<0) {y=this.dim[1]-1}; break;
+    }
     this.elements.push([x,y]);
     while (this.elements.length>this.maxlength) {this.elements.splice(0,1)}
   }
