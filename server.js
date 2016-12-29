@@ -1,5 +1,4 @@
 'use strict';
-const debug=false;
 const express = require('express');
 const SocketServer = require('ws').Server;
 const path = require('path');
@@ -7,8 +6,12 @@ const PORT = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
 const server = express()
   .use((req, res) => res.sendFile(INDEX) )
-  .listen(PORT, function() {if (debug) process.stdout.write(`\x1bc\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m`);});
+  .listen(PORT, function() {process.stdout.write(`\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m `)});
 const wss = new SocketServer({ server });
+///--- HELPERS ---///
+Array.prototype.remove = function(e) {var t, _ref; if ((t = this.indexOf(e)) > -1) {return ([].splice.apply(this, [t,1].concat(_ref = [])), _ref)}};
+process.on ('SIGINT', function () {process.stdout.write('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m'); process.exit(0);});
+function broadcast(text) {wss.clients.forEach((ws) => {ws.send(":"+text)})}
 
 ///--- MAIN ---///
 var snakes=[];
@@ -16,12 +19,7 @@ var snakesID=0;
 const board_dimension=[40,20];
 const delay=500;
 setInterval(() => {
-  if (debug) {board_reset()} // DEBUG
-  snakes.forEach(function (s) {
-    s.move();
-    if (debug) {board_put_snake(s)} // DEBUG
-  });
-  if (debug) {board_print()} // DEBUG
+  snakes.forEach(function (s) {s.move()});
   detect_collisions(snakes);
   var snakes_stringified=JSON.stringify(snakes);
   wss.clients.forEach((ws) => {ws.send(snakes_stringified)})
@@ -39,11 +37,13 @@ Snake.prototype.reset = function () {
   this.dim=board_dimension;
 }
 Snake.prototype.launch = function () {
-  this.elements=[[0,0]]; // issue: random position here
+  this.elements=[[Math.floor((Math.random()*(board_dimension[0]-1))),Math.floor((Math.random()*(board_dimension[1]-1)))]]; // random position here
   this.maxlength=3;
+  broadcast('PLAYER '+this.id+' STARTED @'+this.elements);
 }
 Snake.prototype.set_heading = function (h) {
   this.heading=h[0];
+  this.maxlength++;
 }
 Snake.prototype.move = function () {
   if (this.elements.length>0) {
@@ -66,9 +66,11 @@ module.exports=Snake;
 function detect_collisions (snakes) {
   var all_heads=[], all_elements=[];
   snakes.forEach(function (s) {
-    // issue: do not include puppy-snakes here
-    if (s.elements.length) {all_heads.push(s.elements[s.elements.length-1])};
-    all_elements=all_elements.concat(s.elements);
+    // do not include puppy-snakes
+    if (s.elements.length>=3) {
+      all_heads.push(s.elements[s.elements.length-1])
+      all_elements=all_elements.concat(s.elements);
+    };
   });
   all_heads.forEach(function (head) {
     var x=head[0], y=head[1], c=0;
@@ -76,50 +78,23 @@ function detect_collisions (snakes) {
       if ((e[0]==x)&&(e[1]==y)) {
         if(c>0) {
           snakes.forEach(function (s) {
-            if (s.elements.indexOf(head)>0) {log('COLLISION @'+head+' '+s.id+' DIES!',41);s.reset()}
+            if (s.elements.indexOf(head)>0) {s.reset();broadcast('PLAYER '+s.id+' DIED @'+head);}
           });
         }
         c++; 
       }
     })
   });
-  log('\n'+all_heads.length+' heads: ['+all_heads+']');
-  log('\n'+all_elements.length+' elements: ['+all_elements+']');
 }
 
 ///--- CONNECTION-HANDLER ---///
 wss.on('connection', (ws) => {
   var s=new Snake();
   snakes.push(s);
-  log('WELCOME '+s.id,42);
-  ws.send(':WELCOME PLAYER '+s.id);
+  ws.send('::ID='+s.id);
+  ws.send(':PRESS ARROW-KEYS TO START, PLAYER '+s.id);
   ws.on('message', (msg) => {
-    log(s.id+msg[0]);
-    if (msg=='Q') {s.reset()}
-    else {s.set_heading(msg[0])}
+    s.set_heading(msg[0]); //if (msg=='Q') {broadcast('PLAYER '+s.id+' QUIT');s.reset()} else {s.set_heading(msg[0])}
   });
-  ws.on('close', () => {snakes.remove(s);log('BYE-BYE '+s.id,41);s=undefined;});
+  ws.on('close', () => {snakes.remove(s);broadcast('PLAYER '+s.id+' LEFT');s=undefined;});
 });
-
-///--- HELPERS ---///
-Array.prototype.remove = function(e) {
-  var t, _ref;
-  if ((t = this.indexOf(e)) > -1) {
-    return ([].splice.apply(this, [t, t - t + 1].concat(_ref = [])), _ref);
-  }
-};
-
-process.on ('SIGINT', function () {
-  if (debug) process.stdout.write('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m');
-  process.exit(0);
-});
-
-///--- DEBUG-HELPERS ---///
-function log(text,col) {
-  if (debug) {if (col>0) {process.stdout.write('\x1b['+col+'m '+text+' \x1b[0m ')} else {process.stdout.write(text+' ');}} return;
-}
-
-var board=[];
-function board_reset() {for(var x=0;x<board_dimension[0];x++){board[x]=[];for(var y=0;y<board_dimension[1];y++){board[x][y]='';}}}
-function board_put_snake(s) {for(var i=0;i<s.elements.length;i++) {board[s.elements[i][0]][s.elements[i][1]]=s.id;}}
-function board_print() {process.stdout.write(`\x1bc\x1b[44m DEBUG-BOARD \x1b[0m`); for(var y=board_dimension[1]-1;y>=0;y--) {var line=''; for(var x=0;x<board_dimension[0];x++) {if (board[x][y]=='') {board[x][y]='.'} var t=board[x][y].toString().slice(0,1); line=line+t;} log('\n'+line);} log('\n');}

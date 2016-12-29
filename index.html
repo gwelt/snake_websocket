@@ -3,21 +3,24 @@
   <head>
     <title>SNAKE / WebSocket</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font:16px Helvetica, Arial; }
+      * {margin:0;padding:0;box-sizing:border-box;}
+      body {font:14px Helvetica, Arial;}
       td {width:10px;height:10px;padding:1px;background-color:#c0c0c0;}
     </style>
   </head>
   <body>
     
-    <div id="grid"></div>
-    <div id="status">WAITING FOR WEBSOCKET TO CONNECT...<br></div>
+    <div id="grid"></div><div id="text"></div>
 
     <script>
-      var ws=false;
-      ws_open();
-      var snakeID="[you do not have a snake yet]";
-      var direction;
+      var ws=ws_open();
+      var snakeID, direction;
+      var keyset=[37,38,39,40,27];
+      var Snakes=[];
+
+      function tweet(t) {
+        document.getElementById('text').innerHTML+=t+"<br>";
+      }
 
       function init_grid (dimX,dimY) {
         var out="<table>";
@@ -32,46 +35,40 @@
         document.getElementById('grid').innerHTML=out;
       }
 
-      function get_color (id) {
-        if (id==snakeID) {return '#ff0000'} else {return '#550000'}
+      function get_color (id,del) {if (del) {return '#d0d0d0'} else if (id==snakeID) {return '#0000e2'} else {return '#505050'}}
+      function display_snake (s,del) {
+        if (document.getElementById('grid').innerHTML=="") {init_grid(s.dim[0],s.dim[1])}
+        s.elements.forEach(function(e) {
+          document.getElementById('X'+e[0]+'Y'+e[1]).style.background=get_color(s.id,del);
+        });
       }
 
       function ws_open() {
         ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
         ws.onopen = function () {};
         ws.onmessage = function (message) {
-          if (message.data.startsWith(':WELCOME PLAYER ')) {snakeID=message.data.substr(16)}
+          if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
+          else if (message.data.startsWith(':')) {tweet(message.data.substr(1))}
           else {
-            var out="<a href="+location.origin+">"+location.origin+"</a><br>YOU ARE SNAKE #"+snakeID+"<br>";
-            document.getElementById('grid').innerHTML="";
-            var Snakes=JSON.parse(message.data);
-            Snakes.forEach(function (s) {
-              if (document.getElementById('grid').innerHTML=="") {init_grid(s.dim[0],s.dim[1])}
-              s.elements.forEach(function(e) {
-                document.getElementById('X'+e[0]+'Y'+e[1]).style.background=get_color(s.id);
-              });
-              if (s.id==snakeID) {
-                if (!s.elements.length) {direction=""}
-                out+="YOUR SNAKE (#"+s.id+"): ";
-              } 
-              else {out+="SNAKE #"+s.id+": ";}
-              out+=s.elements;
-              out+="<br>";
-            });
-            document.getElementById('status').innerHTML=out;
+            direction=0; //if ((s.id==snakeID)&&(!s.elements.length)) {direction=0}
+            Snakes.forEach(function (s) {display_snake(s,true)});
+            Snakes=JSON.parse(message.data);
+            Snakes.forEach(function (s) {display_snake(s,false)});
           }
-        };
+        }
+        return ws;
       }
 
-      function send(msg) {if ((msg!=direction)&&(ws)) {direction=msg; ws.send(msg)}}
+      function send(new_direction) {if (new_direction!=direction) {direction=new_direction; ws.send(new_direction)}}
       document.onkeydown = function(event) {
-        var keyset=[37,38,39,40,27];
-        if ((ws)&&(keyset.indexOf(event.keyCode)>=0)) {
-          if      (event.keyCode==37) {send('L')} // LEFT
-          else if (event.keyCode==38) {send('U')} // UP
-          else if (event.keyCode==39) {send('R')} // RIGHT
-          else if (event.keyCode==40) {send('D')} // DOWN
-          else if (event.keyCode==27) {send('Q')} // ESC (EXIT)
+        if (keyset.indexOf(event.keyCode)>=0) {
+          switch (event.keyCode) {
+            case 37: send('L'); break; // LEFT
+            case 38: send('U'); break; // UP
+            case 39: send('R'); break; // RIGHT
+            case 40: send('D'); break; // DOWN
+            case 27: send('Q'); break; // ESC (QUIT)
+          }
           event.cancelBubble = true;
           event.returnValue = false;
         }
