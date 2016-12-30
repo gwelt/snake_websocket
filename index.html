@@ -35,25 +35,21 @@
         document.getElementById('grid').innerHTML=out;
       }
 
-      function get_color (id,del) {if (del) {return '#d0d0d0'} else if (id==snakeID) {return '#0000e2'} else {return '#505050'}}
-      function display_snake (s,del) {
-        if (document.getElementById('grid').innerHTML=="") {init_grid(s.dim[0],s.dim[1])}
-        s.elements.forEach(function(e) {
-          document.getElementById('X'+e[0]+'Y'+e[1]).style.background=get_color(s.id,del);
-        });
-      }
+      function display_snake (s,col) {s.elements.forEach(function(e){document.getElementById('X'+e[0]+'Y'+e[1]).style.background=col})}
+      function get_color (id) {if (id==snakeID) {return '#0000e2'} else {return '#505050'}}
 
       function ws_open() {
         ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
-        ws.onopen = function () {};
         ws.onmessage = function (message) {
           if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
           else if (message.data.startsWith(':')) {tweet(message.data.substr(1))}
           else {
             direction=0; //if ((s.id==snakeID)&&(!s.elements.length)) {direction=0}
-            Snakes.forEach(function (s) {display_snake(s,true)});
+            Snakes.forEach(function (s) {display_snake(s,'#d0d0d0')});
+            var init=false; if (Snakes.length==0) {init=true};
             Snakes=JSON.parse(message.data);
-            Snakes.forEach(function (s) {display_snake(s,false)});
+            if (init) {init_grid(Snakes[0].dim[0],Snakes[0].dim[1])}
+            Snakes.forEach(function (s) {display_snake(s,get_color(s.id))});
           }
         }
         return ws;

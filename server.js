@@ -11,17 +11,16 @@ const wss = new SocketServer({ server });
 ///--- HELPERS ---///
 Array.prototype.remove = function(e) {var t, _ref; if ((t = this.indexOf(e)) > -1) {return ([].splice.apply(this, [t,1].concat(_ref = [])), _ref)}};
 process.on ('SIGINT', function () {process.stdout.write('\n\r\x1b[44m SNAKE SERVER DOWN \x1b[0m'); process.exit(0);});
-function broadcast(text) {wss.clients.forEach((ws) => {ws.send(":"+text)})}
 
 ///--- MAIN ---///
 var snakes=[];
 var snakesID=0;
 const board_dimension=[40,20];
+const startlength=3;
 const delay=300;
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
-  detect_collisions(snakes);
-  var snakes_stringified=JSON.stringify(snakes);
+  var snakes_stringified=JSON.stringify(detect_collisions(snakes));
   wss.clients.forEach((ws) => {ws.send(snakes_stringified)})
 }, delay);
 
@@ -38,12 +37,12 @@ Snake.prototype.reset = function () {
 }
 Snake.prototype.launch = function () {
   this.elements=[[Math.floor((Math.random()*(board_dimension[0]-1))),Math.floor((Math.random()*(board_dimension[1]-1)))]]; // random position here
-  this.maxlength=3;
+  this.maxlength=startlength;
   broadcast('PLAYER '+this.id+' STARTED @'+this.elements);
 }
 Snake.prototype.set_heading = function (h) {
+  if (h[0]!=this.heading) {this.maxlength++} // GROW +1 WHEN CHANGING DIRECTION
   this.heading=h[0];
-  this.maxlength++;
 }
 Snake.prototype.move = function () {
   if (this.elements.length>0) {
@@ -63,11 +62,11 @@ Snake.prototype.move = function () {
 module.exports=Snake;
 
 ///--- COLLISION DETECTION ---///
+/* if a snakes' head collides with some other element, the snake dies */
 function detect_collisions (snakes) {
   var all_heads=[], all_elements=[];
   snakes.forEach(function (s) {
-    // do not include puppy-snakes
-    if (s.elements.length>=3) {
+    if (s.elements.length>startlength) { // PUPPIES DO NOT COLLIDE
       all_heads.push(s.elements[s.elements.length-1])
       all_elements=all_elements.concat(s.elements);
     };
@@ -85,16 +84,16 @@ function detect_collisions (snakes) {
       }
     })
   });
+  return snakes;
 }
 
 ///--- CONNECTION-HANDLER ---///
+function broadcast(text) {wss.clients.forEach((ws) => {ws.send(":"+text)})}
 wss.on('connection', (ws) => {
   var s=new Snake();
   snakes.push(s);
   ws.send('::ID='+s.id);
   ws.send(':PRESS ARROW-KEYS TO START, PLAYER '+s.id);
-  ws.on('message', (msg) => {
-    s.set_heading(msg[0]); //if (msg=='Q') {broadcast('PLAYER '+s.id+' QUIT');s.reset()} else {s.set_heading(msg[0])}
-  });
+  ws.on('message', (msg) => {s.set_heading(msg[0])});
   ws.on('close', () => {snakes.remove(s);broadcast('PLAYER '+s.id+' LEFT');s=undefined;});
 });
