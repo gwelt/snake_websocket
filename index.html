@@ -17,9 +17,14 @@
       var snakeID, direction;
       var keyset=[37,38,39,40,27];
       var Snakes=[];
+      var tweets=[];
 
       function tweet(t) {
-        document.getElementById('text').innerHTML+=t+"<br>";
+        tweets.push(t);
+        while (tweets.length>1) {tweets.splice(0,1)}
+        var out="";
+        tweets.forEach(function(tt) {out+=tt+"<br>"});
+        document.getElementById('text').innerHTML=out;
       }
 
       function init_grid (dimX,dimY) {
@@ -63,7 +68,7 @@
             case 38: send('U'); break; // UP
             case 39: send('R'); break; // RIGHT
             case 40: send('D'); break; // DOWN
-            case 27: send('Q'); break; // ESC (QUIT)
+            case 27: send('Q'); break; // ESC (QUIT/START)
           }
           event.cancelBubble = true;
           event.returnValue = false;
