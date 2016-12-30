@@ -20,8 +20,7 @@ const startlength=3;
 const delay=300;
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
-  var snakes_stringified=JSON.stringify(detect_collisions(snakes));
-  wss.clients.forEach((ws) => {ws.send(snakes_stringified)})
+  broadcast(JSON.stringify(detect_collisions(snakes)));
 }, delay);
 
 ///--- SNAKE-CLASS ---///
@@ -38,7 +37,7 @@ Snake.prototype.reset = function () {
 Snake.prototype.launch = function () {
   this.elements=[[Math.floor((Math.random()*(board_dimension[0]-1))),Math.floor((Math.random()*(board_dimension[1]-1)))]]; // random position here
   this.maxlength=startlength;
-  broadcast('PLAYER '+this.id+' STARTED @'+this.elements);
+  broadcast(':PLAYER '+this.id+' STARTED @'+this.elements);
 }
 Snake.prototype.set_heading = function (h) {
   if (h[0]!=this.heading) {this.maxlength++} // GROW +1 WHEN CHANGING DIRECTION
@@ -77,7 +76,7 @@ function detect_collisions (snakes) {
       if ((e[0]==x)&&(e[1]==y)) {
         if(c>0) {
           snakes.forEach(function (s) {
-            if (s.elements.indexOf(head)>0) {s.reset();broadcast('PLAYER '+s.id+' DIED @'+head);}
+            if (s.elements.indexOf(head)>0) {s.reset();broadcast(':PLAYER '+s.id+' DIED @'+head);}
           });
         }
         c++; 
@@ -88,12 +87,12 @@ function detect_collisions (snakes) {
 }
 
 ///--- CONNECTION-HANDLER ---///
-function broadcast(text) {wss.clients.forEach((ws) => {ws.send(":"+text)})}
+function broadcast(text) {wss.clients.forEach((ws) => {ws.send(text)})}
 wss.on('connection', (ws) => {
   var s=new Snake();
   snakes.push(s);
   ws.send('::ID='+s.id);
   ws.send(':PRESS ARROW-KEYS TO START, PLAYER '+s.id);
   ws.on('message', (msg) => {s.set_heading(msg[0])});
-  ws.on('close', () => {snakes.remove(s);broadcast('PLAYER '+s.id+' LEFT');s=undefined;});
+  ws.on('close', () => {snakes.remove(s);broadcast(':PLAYER '+s.id+' LEFT');s=undefined;});
 });
