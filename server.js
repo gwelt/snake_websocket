@@ -15,13 +15,10 @@ process.on ('SIGINT', function () {process.stdout.write('\n\r\x1b[44m SNAKE SERV
 ///--- MAIN ---///
 var snakes=[];
 var snakesID=0;
-const board_dimension=[40,20];
-const startlength=3;
-const delay=300;
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
   broadcast(JSON.stringify(detect_collisions(snakes)));
-}, delay);
+}, 300);
 
 ///--- SNAKE-CLASS ---///
 function Snake() {
@@ -32,11 +29,11 @@ Snake.prototype.reset = function () {
   this.elements=[];
   this.heading=null;
   this.maxlength=0;
-  this.dim=board_dimension;
+  this.dim=[40,20];
 }
 Snake.prototype.launch = function () {
-  this.elements=[[Math.floor((Math.random()*(board_dimension[0]-1))),Math.floor((Math.random()*(board_dimension[1]-1)))]]; // random position here
-  this.maxlength=startlength;
+  this.elements=[[Math.floor((Math.random()*(this.dim[0]-1))),Math.floor((Math.random()*(this.dim[1]-1)))]]; // random position here
+  this.maxlength=3;
   broadcast(':PLAYER '+this.id+' STARTED @'+this.elements);
 }
 Snake.prototype.set_heading = function (h) {
@@ -65,7 +62,7 @@ module.exports=Snake;
 function detect_collisions (snakes) {
   var all_heads=[], all_elements=[];
   snakes.forEach(function (s) {
-    if (s.elements.length>startlength) { // PUPPIES DO NOT COLLIDE
+    if (s.elements.length>3) { // PUPPIES DO NOT COLLIDE
       all_heads.push(s.elements[s.elements.length-1])
       all_elements=all_elements.concat(s.elements);
     };
@@ -87,7 +84,7 @@ function detect_collisions (snakes) {
 }
 
 ///--- CONNECTION-HANDLER ---///
-function broadcast(text) {wss.clients.forEach((ws) => {ws.send(text)})}
+function broadcast(text) {try{wss.clients.forEach((ws) => {ws.send(text)})} catch(err){} }
 wss.on('connection', (ws) => {
   var s=new Snake();
   snakes.push(s);
