@@ -36,6 +36,7 @@
         for (var yy=dimY-1;yy>=0;yy--) { out+="<div style=clear:both></div>"; for (var xx=0;xx<dimX;xx++) { out+="<div class=g id=X"+xx+"Y"+yy+"></div>"; } }
         out+="</div><div style=clear:both></div><div id=text style=\"text-align:left;font:"+x+"px 'Lucidia Console', Monaco, monospace\"></div>";
         grid.innerHTML=out; 
+        tweet();
       }
 
       function display_snake (s,col) {
