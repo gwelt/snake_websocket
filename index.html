@@ -2,15 +2,10 @@
 <html>
   <head>
     <title>SNAKE / WebSocket</title>
-    <style>
-      * {margin:0;padding:0;box-sizing:border-box;}
-      body {font:14px "Lucidia Console", Monaco, monospace;}
-      td {width:10px;height:10px;padding:1px;background-color:#dedede;}
-    </style>
   </head>
   <body>
     
-    <div id="grid"></div><div id="text"></div>
+    <div id=grid></div>
 
     <script>
       var ws=ws_open();
@@ -20,7 +15,7 @@
       var tweets=[];
 
       function tweet(t) {
-        tweets.push(t);
+        if (t) {tweets.push(t)}
         while (tweets.length>1) {tweets.splice(0,1)}
         var out="";
         tweets.forEach(function(tt) {out+=tt+"<br>"});
@@ -28,16 +23,19 @@
       }
 
       function init_grid (dimX,dimY) {
-        var out="<table>";
-        for (var y=dimY-1;y>=0;y--) {
-          out+="<tr>";
-          for (var x=0;x<dimX;x++) {
-            out+="<td id=X"+x+"Y"+y+"></td>";
-          }
-          out+="</tr>";
-        }
-        out+="</table>";
-        document.getElementById('grid').innerHTML=out;
+        var grid=document.getElementById("grid");
+        grid.style.textAlign='left';
+        var gridX=grid.offsetWidth;
+        var gridY=grid.offsetHeight;
+        var x=Math.floor(gridX/dimX);
+        var y=Math.floor(gridY/(dimY));
+        if (y==0) {y=x} else if (x<y) {y=x} else {x=y};
+        var out="";
+        out+="<style>.g {float:left;width:"+x+"px;height:"+y+"px;background-color:#e0e0e0;border:1px solid white;box-sizing:border-box;}</style>";
+        out+="<div style='display:inline-block;width:"+x*dimX+"px;height:100%;background-color:#ffffff';>";
+        for (var yy=dimY-1;yy>=0;yy--) { out+="<div style=clear:both></div>"; for (var xx=0;xx<dimX;xx++) { out+="<div class=g id=X"+xx+"Y"+yy+"></div>"; } }
+        out+="</div><div style=clear:both></div><div id=text style=\"text-align:left;font:"+x+"px 'Lucidia Console', Monaco, monospace\"></div>";
+        grid.innerHTML=out; 
       }
 
       function display_snake (s,col) {
