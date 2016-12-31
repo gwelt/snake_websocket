@@ -1,4 +1,4 @@
-var ws=ws_open();
+var ws=ws_open(location.origin.replace(/^http/, 'ws'));
 var snakeID, direction;
 var keyset=[37,38,39,40,27];
 var Snakes=[];
@@ -54,16 +54,18 @@ document.onkeydown = function(event) {
 
 function send(new_direction) {if (new_direction!=direction) {direction=new_direction; ws.send(new_direction)}}
 
-function ws_open() {
-  ws=new WebSocket(location.origin.replace(/^http/, 'ws'));
-  ws.onmessage = function (message) {
-    if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
-    else if (message.data.startsWith(':')) {tweet(message.data.substr(1))}
-    else {
-      Snakes.forEach(function (s) {display_snake(s,null);if ((s.id==snakeID)&&(!s.elements.length)) {direction=0}});
-      Snakes=JSON.parse(message.data);
-      if (direction==null) {init_grid(Snakes[0].dim[0],Snakes[0].dim[1])}
-      Snakes.forEach(function (s) {display_snake(s,(s.id==snakeID)?'#0070C0':'#505050')});
+function ws_open(url) {
+  try {ws=new WebSocket(url)} catch (err){ws=false};
+  if (ws) {
+    ws.onmessage = function (message) {
+      if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
+      else if (message.data.startsWith(':')) {tweet(message.data.substr(1))}
+      else {
+        Snakes.forEach(function (s) {display_snake(s,null);if ((s.id==snakeID)&&(!s.elements.length)) {direction=0}});
+        Snakes=JSON.parse(message.data);
+        if (direction==null) {init_grid(Snakes[0].dim[0],Snakes[0].dim[1])}
+        Snakes.forEach(function (s) {display_snake(s,(s.id==snakeID)?'#0070C0':'#505050')});
+      }
     }
   }
   return ws;
