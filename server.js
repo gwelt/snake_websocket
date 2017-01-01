@@ -7,6 +7,7 @@ const INDEX = path.join(__dirname, 'index.html');
 const CLIENTJS = path.join(__dirname, 'client.js');
 const server = express()
   .use((req, res) => {
+    res.header 'Access-Control-Allow-Origin', '*';
     if (req.url=="/") {res.sendFile(INDEX)}
     if (req.url=="/client.js") {res.sendFile(CLIENTJS)}
   })
