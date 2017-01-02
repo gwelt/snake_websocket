@@ -37,7 +37,7 @@ Snake.prototype.reset = function () {
   this.dim=[40,20];
 }
 Snake.prototype.launch = function () {
-  this.elements=[[Math.floor((Math.random()*(this.dim[0]-1))),Math.floor((Math.random()*(this.dim[1]-1)))]]; // random position here
+  this.elements=[[Math.floor((Math.random()*(this.dim[0]-1))),Math.floor((Math.random()*(this.dim[1]-1)))]];
   this.maxlength=3;
   broadcast(':PLAYER '+this.id+' STARTED @'+this.elements);
 }
@@ -67,7 +67,7 @@ module.exports=Snake;
 function detect_collisions (snakes) {
   var all_heads=[], all_elements=[];
   snakes.forEach(function (s) {
-    if (s.elements.length>3) { // PUPPIES DO NOT COLLIDE
+    if (s.elements.length>3) { // puppies do not collide
       all_heads.push(s.elements[s.elements.length-1])
       all_elements=all_elements.concat(s.elements);
     };

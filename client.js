@@ -55,7 +55,7 @@ document.onkeydown = function(event) {
 function send(new_direction) {if (new_direction!=direction) {direction=new_direction; ws.send(new_direction)}}
 
 function ws_open(url) {
-  try {ws=new WebSocket(url)} catch (err){ws=false};
+  try {ws=new WebSocket(url)} catch (err){alert(err);ws=false};
   if (ws) {
     ws.onmessage = function (message) {
       if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
