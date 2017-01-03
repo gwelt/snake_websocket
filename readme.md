@@ -22,4 +22,16 @@ Open [http://localhost:3000](http://localhost:3000) and/or connect to your local
 
 ### Spread the snakes!
 - Run [./port3000redirect.sh](https://github.com/gwelt/snake_websocket/blob/master/port3000redirect.sh) on your server to add redirect-rules to your [IPTABLES](https://help.ubuntu.com/community/IptablesHowTo) and enable connections to [http://localhost](http://localhost) (port 80). 
+- If you run Apache, you can also enable some mods...
+```
+sudo s2enmod rewrite proxy proxy_wstunnel
+```
+- ...and then add these ProxyPass-directives to your apache.conf:
+```
+<VirtualHost *:80>
+    ProxyPass /socket ws://localhost:3000/
+    ProxyPass / http://localhost:3000/
+</VirtualHost>
+```
 - Use [PM2](http://pm2.keymetrics.io/) process manager.
+
