@@ -89,12 +89,13 @@ function detect_collisions (snakes) {
 }
 
 ///--- CONNECTION-HANDLER ---///
-function broadcast(text) {try{wss.clients.forEach((ws) => {ws.send(text)})} catch(err){} }
+function broadcast(text) {try{wss.clients.forEach((ws) => {ws.send(text)})} catch(err){};}
 wss.on('connection', (ws) => {
   var s=new Snake();
   snakes.push(s);
   ws.send('::ID='+s.id);
-  ws.send(':PRESS ARROW-KEYS TO START, PLAYER '+s.id);
-  ws.on('message', (msg) => {s.set_heading(msg[0])});
+  broadcast(':PLAYER '+s.id+' CONNECTED');
+  ws.send(':PRESS ARROW-KEYS TO START, #'+s.id);
+  ws.on('message', (msg) => {if (msg) {s.set_heading(msg[0])}});
   ws.on('close', () => {snakes.remove(s);broadcast(':PLAYER '+s.id+' LEFT');s=undefined;});
 });
