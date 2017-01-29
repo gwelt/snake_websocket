@@ -177,6 +177,6 @@ process.on('message', (m) => {
       lcd_device.on();
       lcd_device.print_starter(1,300);
       var delay=80;
-      if (lcd_device.print_delayed(m,delay)) {timeout=setTimeout(function(){ lcd_device.off() }, 32*delay+20000)}
+      if (lcd_device.print_delayed(m,delay)) {timeout=setTimeout(function(){ lcd_device.off() }, 32*delay+60000)}
     //}, 0);
 });

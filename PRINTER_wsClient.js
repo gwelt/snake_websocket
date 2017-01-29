@@ -6,9 +6,14 @@ var welcome="================================\\nhttp://"+require('os').networkIn
 require('child_process').execSync('echo "'+welcome+'" > /dev/ttyS0','e');
 console.log(welcome);
 
+Date.prototype.addHours= function(h){this.setHours(this.getHours()+h); return this;}
+
 ws.on('message', function(message) {
   if (message.startsWith(':')) {
-  	require('child_process').execSync('echo "'+message.substr(1)+'" > /dev/ttyS0','e');
+        var date=new Date().addHours(1);
+        var hour = date.getHours(); hour = (hour < 10 ? "0" : "") + hour;
+        var min  = date.getMinutes(); min = (min < 10 ? "0" : "") + min;
+  	require('child_process').execSync('echo "'+hour+""+min+' '+message.substr(1)+'" > /dev/ttyS0','e');
   	//console.log(message.substr(1));
   }
 });
