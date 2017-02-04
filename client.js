@@ -21,10 +21,30 @@ function init_grid (dimX,dimY) {
   if (s==0) {s=Math.floor(grid.offsetWidth/dimX)};
   var out="<style>.g {float:left;width:"+s+"px;height:"+s+"px;background-color:#e0e0e0;border:1px solid white;box-sizing:border-box;}</style>";
   out+="<div style='display:inline-block;width:"+s*dimX+"px;height:100%;background-color:#ffffff';>";
-  for (var y=dimY-1;y>=0;y--) { out+="<div style=clear:both></div>"; for (var x=0;x<dimX;x++) { out+="<div class=g id=X"+x+"Y"+y+"></div>"; } }
+  for (var y=dimY-1;y>=0;y--) { out+="<div style=clear:both></div>"; for (var x=0;x<dimX;x++) { out+="<div onclick=turn("+((x<dimX/2)?0:1)+") class=g id=X"+x+"Y"+y+"></div>"; } }
   out+="</div><div style=clear:both></div><div id=text style=\"text-align:left;font:"+s+"px 'Lucidia Console', Monaco, monospace\"></div>";
   grid.innerHTML=out; 
   tweet();
+}
+
+function turn(right) {
+  if (right) {
+    switch (direction) {
+      case 'L': send('U'); break;
+      case 'U': send('R'); break;
+      case 'R': send('D'); break;
+      case 'D': send('L'); break;
+      default: send('R');
+    }
+  } else {
+    switch (direction) {
+      case 'L': send('D'); break;
+      case 'U': send('L'); break;
+      case 'R': send('U'); break;
+      case 'D': send('R'); break;
+      default: send('L');
+    }
+  }
 }
 
 function display_snake (s,col) {
@@ -61,10 +81,10 @@ function ws_open(url) {
       if (message.data.startsWith('::ID=')) {snakeID=message.data.substr(5)}
       else if (message.data.startsWith(':')) {tweet(message.data.substr(1))}
       else {
-        Snakes.forEach(function (s) {display_snake(s,null);if ((s.id==snakeID)&&(!s.elements.length)) {direction=0}});
+        Snakes.forEach(function (s) {display_snake(s,null)});
         Snakes=JSON.parse(message.data);
         if (direction==null) {init_grid(Snakes[0].dim[0],Snakes[0].dim[1])}
-        Snakes.forEach(function (s) {display_snake(s,(s.id==snakeID)?'#0070C0':'#505050')});
+        Snakes.forEach(function (s) {display_snake(s,(s.id==snakeID)?'#0070C0':'#505050'); if ((s.id==snakeID)&&(s.heading==null)) {direction=0}; });
       }
     }
   }
