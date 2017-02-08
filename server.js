@@ -20,9 +20,11 @@ process.on ('SIGINT', function () {process.stdout.write('\n\r\x1b[44m SNAKE SERV
 ///--- MAIN ---///
 var snakes=[];
 var snakesID=0;
+var current_bc="";
 setInterval(() => {
   snakes.forEach(function (s) {s.move()});
-  broadcast(JSON.stringify(detect_collisions(snakes)));
+  var bc=JSON.stringify(detect_collisions(snakes));
+  if (bc!=current_bc) {broadcast(bc);current_bc=bc;}
 }, 300);
 
 ///--- SNAKE-CLASS ---///
