@@ -10,7 +10,7 @@
     "node": "6.2.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node snake_server.js"
   },
   "keywords": [
     "snake",
