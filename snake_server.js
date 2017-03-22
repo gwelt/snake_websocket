@@ -4,12 +4,12 @@ const SocketServer = require('ws').Server;
 const path = require('path');
 const PORT = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
-const CLIENTJS = path.join(__dirname, 'client.js');
+const CLIENTJS = path.join(__dirname, 'snake_client.js');
 const server = express()
   .use((req, res) => {
     res.setHeader('Access-Control-Allow-Origin','*');
     if (req.url=="/") {res.sendFile(INDEX)}
-    if (req.url=="/client.js") {res.sendFile(CLIENTJS)}
+    if (req.url=="/snake_client.js") {res.sendFile(CLIENTJS)}
   })
   .listen(PORT, function() {process.stdout.write(`\x1b[44m SNAKE SERVER LISTENING ON PORT ${ PORT } \x1b[0m `)});
 const wss = new SocketServer({ server });
